@@ -1,0 +1,119 @@
+.map-view-page {
+  display: flex;
+  height: calc(100vh - 56px);
+  min-height: 24rem;
+}
+
+.map-sidebar {
+  width: 18rem;
+  flex-shrink: 0;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-gray-200);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-sidebar-title {
+  padding: 1rem 1.25rem;
+  font-size: 1.125rem;
+  color: var(--color-dark-blue);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.map-legend {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.map-legend-item {
+  font-weight: 500;
+}
+
+.map-request-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0.5rem;
+}
+
+.map-request-placeholder {
+  padding: 1rem;
+  color: var(--color-gray-600);
+  font-size: 0.9375rem;
+}
+
+.map-request-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.map-request-item:hover {
+  background: var(--color-gray-100);
+}
+
+.map-request-item--active {
+  background: #dbeafe;
+}
+
+.map-request-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.4rem;
+}
+
+.map-request-item strong {
+  font-size: 0.9375rem;
+}
+
+.map-request-item small {
+  font-size: 0.8125rem;
+  color: var(--color-gray-600);
+}
+
+.map-container-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.map-container .leaflet-popup-content-wrapper {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+  .map-view-page {
+    flex-direction: column;
+    height: auto;
+    min-height: 28rem;
+  }
+
+  .map-sidebar {
+    width: 100%;
+    max-height: 12rem;
+    border-right: none;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .map-container-wrap {
+    min-height: 20rem;
+  }
+}
