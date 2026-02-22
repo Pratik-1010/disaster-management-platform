@@ -253,43 +253,19 @@ def create_help_request():
     log("POST /api/request - create help request")
     data = data or {}
 
-    # Required field presence (use "is None" so 0 and 0.0 are valid for latitude/longitude)
-    required_field_keys = {
-        "name": ["name", "fullName"],
-        "phone": ["phone", "phoneNumber"],
-        "disaster_type": ["disaster_type", "disasterType"],
-        "help_type": ["help_type", "helpType"],
-        "description": ["description"],
-        "latitude": ["latitude"],
-        "longitude": ["longitude"],
-    }
-    for field, keys in required_field_keys.items():
-        if all(data.get(k) is None for k in keys):
-            return jsonify({"success": False, "message": f"{field} missing"}), 400
+    if data.get("latitude") is None or data.get("longitude") is None:
+        return jsonify({"success": False, "message": "Location is required"}), 400
 
-    name = (data.get("name") or data.get("fullName") or "").strip()
-    phone = (data.get("phone") or data.get("phoneNumber") or "").strip()
-    help_type = (data.get("help_type") or data.get("helpType") or "").strip()
-    disaster_type = (data.get("disaster_type") or data.get("disasterType") or "").strip() or "Unknown"
+    name = (data.get("name") or data.get("fullName") or "Anonymous").strip() or "Anonymous"
+    phone = (data.get("phone") or data.get("phoneNumber") or "Not provided").strip() or "Not provided"
+    help_type = (data.get("help_type") or data.get("helpType") or "Rescue").strip() or "Rescue"
+    disaster_type = (data.get("disaster_type") or data.get("disasterType") or "Unknown").strip() or "Unknown"
     description = (data.get("description") or "").strip()
     latitude = data.get("latitude")
     longitude = data.get("longitude")
 
-    if name == "":
-        return jsonify({"success": False, "message": "name is required"}), 400
-    if phone == "":
-        return jsonify({"success": False, "message": "Validation error"}), 400
-    raw_dt = (data.get("disaster_type") or data.get("disasterType") or "").strip()
-    if raw_dt == "":
-        return jsonify({"success": False, "message": "Validation error"}), 400
-    if help_type == "":
-        return jsonify({"success": False, "message": "Validation error"}), 400
-    if help_type not in VALID_HELP_TYPES:
-        return jsonify({"success": False, "message": f"help_type must be one of: {', '.join(VALID_HELP_TYPES)}"}), 400
     if not _valid_gps(latitude, longitude):
-        return jsonify({"success": False, "message": "Validation error"}), 400
-    if len(description) < 15:
-        return jsonify({"success": False, "message": "Validation error"}), 400
+        return jsonify({"success": False, "message": "Location is required"}), 400
 
     try:
         lat = float(latitude)
@@ -619,5 +595,8 @@ def ensure_default_admin():
 if __name__ == "__main__":
     db.init_db()
     ensure_default_admin()
-    log("Starting server at http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+    port = int(os.environ.get("PORT", 5000))
+
+    log(f"Starting server on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=False)
