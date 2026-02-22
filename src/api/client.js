@@ -7,12 +7,12 @@ const BASE_URL = import.meta.env.VITE_API_URL || '/api'
 async function request(endpoint, options = {}) {
   const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`
   const config = {
+    ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    ...options,
   }
   if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
     config.body = JSON.stringify(options.body)

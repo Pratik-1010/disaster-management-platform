@@ -1,6 +1,9 @@
 {
   "name": "disaster-response-relief-platform",
   "private": true,
+  "engines": {
+  "node": "18.x"
+},
   "version": "1.0.0",
   "type": "module",
   "scripts": {
