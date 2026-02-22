@@ -14,7 +14,7 @@ export default function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/request-help', label: 'Request Help' },
   ]
-  const volunteerLink = isLoggedIn ? { to: '/volunteer', label: 'Volunteer' } : null
+  const volunteerLink = isLoggedIn ? { to: '/volunteer', label: 'Requests' } : null
   const adminLink = isAdmin ? { to: '/admin', label: 'Admin' } : null
   const mapLink = isLoggedIn ? { to: '/map', label: 'Map' } : null
   const navLinks = [...baseLinks, volunteerLink, adminLink, mapLink].filter(Boolean)

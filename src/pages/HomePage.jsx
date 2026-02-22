@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import EmergencyContacts from '../components/EmergencyContacts'
 import './HomePage.css'
 
 const roleCards = [
@@ -45,6 +46,8 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      <EmergencyContacts />
 
       <section className="roles">
         <div className="roles-inner">

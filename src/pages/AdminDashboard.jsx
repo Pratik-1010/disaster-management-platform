@@ -295,6 +295,7 @@ export default function AdminDashboard() {
                       <th>Disaster Type</th>
                       <th>Help Type</th>
                       <th>Status</th>
+                      <th>Assigned To</th>
                       <th>Location</th>
                     </tr>
                   </thead>
@@ -307,19 +308,31 @@ export default function AdminDashboard() {
                         </td>
                         <td>
                           <span className="admin-tag admin-tag--help">{r.helpType || r.help_type}</span>
+                          <span
+                            className="admin-tag admin-tag--priority"
+                            style={{
+                              marginLeft: '6px',
+                              backgroundColor: (r.priority || 'LOW') === 'HIGH' ? '#dc2626' : (r.priority || 'LOW') === 'MEDIUM' ? '#ea580c' : '#16a34a',
+                              color: '#fff',
+                            }}
+                          >
+                            {r.priority || 'LOW'}
+                          </span>
                         </td>
                         <td><span className={"admin-status admin-status--" + (r.status || 'pending')}>{r.status || 'pending'}</span></td>
+                        <td>
+                          <span className="admin-tag admin-tag--assigned">
+                            Handled by: {r.assigned_organization || '—'}
+                            <br />
+                            Volunteer: {r.volunteer_name || 'Volunteer not assigned'}
+                          </span>
+                        </td>
                         <td>{r.latitude && r.longitude ? r.latitude + ", " + r.longitude : "-"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </section>
-
-            <section className="admin-section admin-section--chart">
-              <h2 className="admin-section-title">Charts placeholder</h2>
-              <div className="admin-chart-placeholder">Charts (e.g. requests over time) can be wired to your API here.</div>
             </section>
 
             <section className="admin-section">

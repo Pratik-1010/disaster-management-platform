@@ -87,6 +87,9 @@ def request_to_api_format(row):
     if not row:
         return None
     disaster_type = row.get("disaster_type") or "Unknown"
+    priority = row.get("priority_level") or row.get("priority") or "LOW"
+    if priority not in ("HIGH", "MEDIUM", "LOW"):
+        priority = "LOW"
     out = {
         "id": row.get("id"),
         "name": row.get("name"),
@@ -101,6 +104,7 @@ def request_to_api_format(row):
         "latitude": row.get("latitude"),
         "longitude": row.get("longitude"),
         "status": row.get("status") or "pending",
+        "priority": priority,
         "created_at": row.get("created_at"),
         "createdAt": row.get("created_at"),
         "status_color": db.get_status_color(row.get("status")),
@@ -114,6 +118,9 @@ def request_to_api_format(row):
         "acceptedAt": row.get("accepted_at"),
         "completed_at": row.get("completed_at"),
         "completedAt": row.get("completed_at"),
+        "assigned_volunteer_id": row.get("assigned_volunteer_id"),
+        "assigned_organization": row.get("assigned_organization") or None,
+        "volunteer_name": row.get("volunteer_name") or None,
     }
     return out
 
@@ -353,9 +360,24 @@ def get_by_status(status):
 # ---------------------------------------------------------------------------
 
 def _accept(request_id):
-    if not db.set_request_status(request_id, "accepted"):
+    volunteer_id = session.get("user_id")
+    if not volunteer_id:
+        return jsonify({"success": False, "message": "Login required"}), 401
+    volunteer = db.get_user_by_id(volunteer_id)
+    if not volunteer:
+        return jsonify({"success": False, "message": "User not found"}), 404
+    organization = volunteer.get("organization") or ""
+    updated = db.accept_request_with_volunteer(request_id, volunteer_id, organization)
+    if not updated:
         return jsonify({"success": False, "message": "Request not found"}), 404
-    return jsonify({"success": True, "data": {"message": "Request accepted", "status": "accepted"}})
+    return jsonify({
+        "success": True,
+        "data": {
+            "message": "Request accepted",
+            "status": "accepted",
+            "request": request_to_api_format(updated),
+        },
+    })
 
 
 def _complete(request_id):

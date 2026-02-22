@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 # Absolute database path so it does not depend on runtime cwd
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.abspath(os.path.join(BASE_DIR, "relief.db"))
+DB_PATH = os.path.join(BASE_DIR, "data", "relief.db")
 print("Using database at:", DB_PATH)
 
 _db_initialized = False
@@ -207,6 +207,21 @@ def init_db():
             conn.commit()
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute("ALTER TABLE requests ADD COLUMN priority_level TEXT DEFAULT 'LOW'")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE requests ADD COLUMN assigned_volunteer_id INTEGER")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE requests ADD COLUMN assigned_organization TEXT")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
         conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -279,6 +294,21 @@ def get_user_by_email(email):
     return d
 
 
+def get_user_by_id(user_id):
+    """Return user dict by id, or None."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id, name, email, password, role, created_at, phone, organization, is_active FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    if "is_active" not in d or d["is_active"] is None:
+        d["is_active"] = 1
+    return d
+
+
 def get_volunteers():
     """Return ALL users where role='volunteer'. No limit."""
     with get_connection() as conn:
@@ -331,56 +361,78 @@ def admin_exists():
 def create_request(name, phone, help_type, description=None, latitude=None, longitude=None, disaster_type=None):
     """
     Insert a new help request. Returns the new row id.
+    Priority: Rescue -> HIGH, Medicine -> MEDIUM, else LOW.
     Sets credibility columns to defaults and recalculates score after insert.
     """
     dt = (disaster_type or "").strip() or "Unknown"
+    ht = (help_type or "").strip()
+    if ht == "Rescue":
+        priority = "HIGH"
+    elif ht == "Medicine":
+        priority = "MEDIUM"
+    else:
+        priority = "LOW"
     with get_connection() as conn:
         print("[DB] create_request: before INSERT INTO requests")
         cur = conn.execute(
             """
             INSERT INTO requests (name, phone, help_type, disaster_type, description, latitude, longitude, status,
-                accuracy_score, is_verified, confirmation_count, duplicate_flag)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 50, 0, 0, 0)
+                accuracy_score, is_verified, confirmation_count, duplicate_flag, priority_level)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 50, 0, 0, 0, ?)
             """,
-            (name, phone, help_type, dt, description or "", latitude, longitude),
+            (name, phone, help_type, dt, description or "", latitude, longitude, priority),
         )
         conn.commit()
         row_id = cur.lastrowid
         print(f"[DB] create_request: after commit, row_id={row_id}")
     recalculate_score(row_id)
-    print(f"[DB] Created request id={row_id} type={help_type} disaster_type={dt} status=pending")
+    print(f"[DB] Created request id={row_id} type={help_type} disaster_type={dt} priority={priority} status=pending")
     return row_id
 
 
 def get_all_requests():
     """Return all requests as list of dicts with timestamps and credibility fields."""
-    cols = "id, name, phone, help_type, disaster_type, description, latitude, longitude, status, created_at, accuracy_score, is_verified, confirmation_count, accepted_at, completed_at"
     with get_connection() as conn:
-        rows = conn.execute(
-            f"SELECT {cols} FROM requests ORDER BY created_at DESC"
-        ).fetchall()
+        rows = conn.execute("""
+            SELECT
+                r.*,
+                u.name AS volunteer_name
+            FROM requests r
+            LEFT JOIN users u
+            ON r.assigned_volunteer_id = u.id
+            ORDER BY r.created_at DESC
+        """).fetchall()
     return [row_to_dict(r) for r in rows]
 
 
 def get_requests_by_status(status):
     """Return requests filtered by status (pending, accepted, completed)."""
-    cols = "id, name, phone, help_type, disaster_type, description, latitude, longitude, status, created_at, accuracy_score, is_verified, confirmation_count, accepted_at, completed_at"
     with get_connection() as conn:
-        rows = conn.execute(
-            f"SELECT {cols} FROM requests WHERE status = ? ORDER BY created_at DESC",
-            (status.lower(),),
-        ).fetchall()
+        rows = conn.execute("""
+            SELECT
+                r.*,
+                u.name AS volunteer_name
+            FROM requests r
+            LEFT JOIN users u
+            ON r.assigned_volunteer_id = u.id
+            WHERE r.status = ?
+            ORDER BY r.created_at DESC
+        """, (status.lower(),)).fetchall()
     return [row_to_dict(r) for r in rows]
 
 
 def get_request_by_id(request_id):
     """Return a single request by id, or None if not found."""
-    cols = "id, name, phone, help_type, disaster_type, description, latitude, longitude, status, created_at, accuracy_score, is_verified, confirmation_count, accepted_at, completed_at"
     with get_connection() as conn:
-        row = conn.execute(
-            f"SELECT {cols} FROM requests WHERE id = ?",
-            (request_id,),
-        ).fetchone()
+        row = conn.execute("""
+            SELECT
+                r.*,
+                u.name AS volunteer_name
+            FROM requests r
+            LEFT JOIN users u
+            ON r.assigned_volunteer_id = u.id
+            WHERE r.id = ?
+        """, (request_id,)).fetchone()
     return row_to_dict(row) if row else None
 
 
@@ -411,6 +463,25 @@ def set_request_status(request_id, new_status):
     if updated:
         print(f"[DB] Request id={request_id} status -> {new_status}")
     return updated > 0
+
+
+def accept_request_with_volunteer(request_id, volunteer_id, organization):
+    """
+    Set request as accepted and assign volunteer. Returns updated request dict or None if not found.
+    """
+    org = (organization or "").strip() or None
+    with get_connection() as conn:
+        cur = conn.execute(
+            """UPDATE requests
+               SET assigned_volunteer_id = ?, assigned_organization = ?, status = 'accepted',
+                   accepted_at = COALESCE(accepted_at, CURRENT_TIMESTAMP)
+               WHERE id = ?""",
+            (volunteer_id, org, request_id),
+        )
+        conn.commit()
+        if cur.rowcount == 0:
+            return None
+    return get_request_by_id(request_id)
 
 
 def get_stats():
