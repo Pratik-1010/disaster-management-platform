@@ -3,7 +3,7 @@ Disaster Response & Relief Coordination Platform - Flask REST API.
 Run with: python app.py
 Server: http://localhost:5000
 """
-
+import os
 import logging
 import traceback
 from functools import wraps
@@ -591,6 +591,7 @@ def ensure_default_admin():
     db.create_user("Pratik more", "admin@dm.com", pw_hash, "admin", phone="", organization="")
     print("[API] Default admin created: admin@dm.com / 12345")
 
+ 
 
 if __name__ == "__main__":
     db.init_db()

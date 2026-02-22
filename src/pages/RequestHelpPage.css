@@ -160,6 +160,12 @@
   color: var(--color-red);
 }
 
+.request-help-note {
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  margin-bottom: 1rem;
+}
+
 .request-help-submit {
   width: 100%;
   padding: 0.875rem 1rem;

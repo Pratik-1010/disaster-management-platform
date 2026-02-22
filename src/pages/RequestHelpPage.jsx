@@ -29,7 +29,7 @@ const initialForm = {
   fullName: '',
   phoneNumber: '',
   disasterType: '',
-  helpType: HELP_TYPES[0],
+  helpType: 'Rescue',
   description: '',
   latitude: '',
   longitude: '',
@@ -74,17 +74,12 @@ export default function RequestHelpPage() {
     e.preventDefault()
     setSubmitting(true)
     setSuccess(false)
-    if (!form.disasterType || !form.disasterType.trim()) {
-      addNotification({ type: TYPES.ERROR, title: 'Validation', message: 'Please select a Disaster Type.' })
-      setSubmitting(false)
-      return
-    }
     const payload = {
-      name: form.fullName.trim(),
-      phone: form.phoneNumber.trim(),
-      disaster_type: form.disasterType.trim(),
-      help_type: form.helpType,
-      description: form.description.trim(),
+      name: form.fullName.trim() || undefined,
+      phone: form.phoneNumber.trim() || undefined,
+      disaster_type: form.disasterType.trim() || undefined,
+      help_type: form.helpType || undefined,
+      description: form.description.trim() || undefined,
       latitude: form.latitude ? parseFloat(form.latitude) : null,
       longitude: form.longitude ? parseFloat(form.longitude) : null,
     }
@@ -136,39 +131,30 @@ export default function RequestHelpPage() {
         )}
 
         <form onSubmit={handleSubmit} className="request-help-form">
-          <label className="request-help-label">
-            Full Name <span className="required">*</span>
-          </label>
+          <label className="request-help-label">Full Name</label>
           <input
             type="text"
             className="request-help-input"
-            placeholder="Enter your full name"
+            placeholder="Optional (leave blank if urgent)"
             value={form.fullName}
             onChange={(e) => update('fullName', e.target.value)}
-            required
           />
 
-          <label className="request-help-label">
-            Phone Number <span className="required">*</span>
-          </label>
+          <label className="request-help-label">Phone Number</label>
           <input
             type="tel"
             className="request-help-input"
-            placeholder="e.g. +1 234 567 8900"
+            placeholder="Optional contact number"
             value={form.phoneNumber}
             onChange={(e) => update('phoneNumber', e.target.value)}
-            required
           />
 
-          <label className="request-help-label">
-            Disaster Type <span className="required">*</span>
-          </label>
+          <label className="request-help-label">Disaster Type</label>
           <div className="request-help-type-wrap">
             <select
               className="request-help-select"
               value={form.disasterType}
               onChange={(e) => update('disasterType', e.target.value)}
-              required
             >
               <option value="">Select disaster type</option>
               {DISASTER_TYPES.map((type) => (
@@ -177,15 +163,12 @@ export default function RequestHelpPage() {
             </select>
           </div>
 
-          <label className="request-help-label">
-            Help Type <span className="required">*</span>
-          </label>
+          <label className="request-help-label">Help Type</label>
           <div className="request-help-type-wrap">
             <select
               className="request-help-select"
               value={form.helpType}
               onChange={(e) => update('helpType', e.target.value)}
-              required
             >
               {HELP_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -198,7 +181,7 @@ export default function RequestHelpPage() {
           <label className="request-help-label">Description</label>
           <textarea
             className="request-help-textarea"
-            placeholder="Describe your situation and what you need..."
+            placeholder="Optional details"
             rows={4}
             value={form.description}
             onChange={(e) => update('description', e.target.value)}
@@ -235,6 +218,8 @@ export default function RequestHelpPage() {
               <p className="request-help-error" role="alert">{locationError}</p>
             )}
           </fieldset>
+
+          <p className="request-help-note">In emergencies, only location is required.</p>
 
           <button
             type="submit"
