@@ -1,11 +1,11 @@
 /**
- * API base URL - set in env or default for development.
- * Replace with your backend URL when deploying.
+ * API base URL - set VITE_API_URL in env for production (e.g. Render backend).
+ * Default for local development.
  */
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 async function request(endpoint, options = {}) {
-  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`
   const config = {
     ...options,
     credentials: 'include',
