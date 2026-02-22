@@ -28,7 +28,9 @@ app.config.update({
 CORS(
     app,
     supports_credentials=True,
-    origins=["http://localhost:5173"]
+    origins=[
+        "http://localhost:5173",
+        "https://your-project.vercel.app"]
 )
 
 logging.basicConfig(level=logging.INFO)
